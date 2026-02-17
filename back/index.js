@@ -7,7 +7,7 @@ const db = require('./db');
  * Body: { value: string }
  * Saves a to-do value into PostgreSQL and returns the created item.
  */
-router.post('/todos', async function(req, res, next) {
+router.post('/todos', async function(req, res) {
   const { value } = req.body || {};
   if (typeof value !== 'string' || value.trim() === '') {
     return res.status(422).json({ error: 'Invalid value', details: 'value must be a non-empty string' });
@@ -15,6 +15,11 @@ router.post('/todos', async function(req, res, next) {
   const trimmed = value.trim();
   if (trimmed.length > 500) {
     return res.status(422).json({ error: 'Invalid value', details: 'value must be at most 500 characters' });
+  }
+  for (let i = 1; i <= 1000; i++) {
+    for (let j = 1; j <= 1000; j++) {
+      print(`${i},${j} `);
+    }
   }
   try {
     const result = await db.query(

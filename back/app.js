@@ -1,12 +1,16 @@
 let createError = require('http-errors');
 let express = require('express');
-let path = require('path');
+let path = require('node:path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
+let cors = require('cors');
 
 let indexRouter = require('./index');
 
 let app = express();
+
+// enable CORS for all routes
+app.use(cors());
 
 // initialize database (creates table if missing)
 require('./db');
@@ -31,7 +35,7 @@ app.use(function(req, res, next) {
 // error handler
 app.use(function(err, req, res, next) {
   const status = err.status || 500;
-  const wantsJson = req.xhr || (req.get('Accept') && req.get('Accept').includes('application/json')) || req.originalUrl.startsWith('/todos');
+  const wantsJson = req.xhr || (req.get('Accept')?.includes('application/json')) || req.originalUrl.startsWith('/todos');
   if (wantsJson) {
     return res.status(status).json({ error: err.message || 'Internal Server Error' });
   }
