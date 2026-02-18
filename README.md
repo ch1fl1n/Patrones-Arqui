@@ -23,7 +23,6 @@ graph
         WebApp["Aplicación Web<br/>(Frontend + Backend)"]
     end
     
-    ExternalAPI["🌐 Servicios Externos<br/>(Opcional)"]
     Admin["👨‍💼 Administrador<br/>del Sistema"]
     
     User -->|Accede a través de navegador| WebApp
@@ -39,7 +38,6 @@ graph
 **Descripción:**
 - **Usuarios Finales**: Acceden a la aplicación web a través de navegadores HTTP/HTTPS
 - **Administradores**: Gestionan la infraestructura, despliegues y monitoreo
-- **Servicios Externos**: APIs de terceros para integraciones (opcional)
 
 ---
 
@@ -199,27 +197,6 @@ graph
         
         DB_js["db.js<br/>- Configuración PostgreSQL<br/>- Pool de conexiones<br/>- Query builder"]
         
-        subgraph Routes["Rutas (Routes)"]
-            UserRoutes["routes/users.js"]
-            ProductRoutes["routes/products.js"]
-            OrderRoutes["routes/orders.js"]
-        end
-        
-        subgraph Controllers["Controllers"]
-            UserCtrl["UserController<br/>- getUsers()<br/>- createUser()<br/>- updateUser()"]
-            ProductCtrl["ProductController<br/>- getProducts()<br/>- createProduct()"]
-        end
-        
-        subgraph Services["Services"]
-            UserSvc["UserService<br/>- validateUser()<br/>- checkEmail()"]
-            ProductSvc["ProductService<br/>- calculatePrice()<br/>- checkStock()"]
-        end
-        
-        subgraph Models["Models/DB"]
-            User["User Model<br/>- id, name, email<br/>- created_at"]
-            Product["Product Model<br/>- id, name, price<br/>- stock"]
-        end
-        
         WWW["bin/www<br/>- Start server<br/>- Port config"]
         
         Package["package.json<br/>- Dependencies<br/>- Scripts"]
@@ -251,9 +228,7 @@ graph
         CSS_file["styles.css<br/>- Reset CSS<br/>- Componentes<br/>- Responsivos<br/>- Animaciones"]
         
         JS_file["script.js<br/>- Funciones de negocio<br/>- Llamadas API<br/>- Manipulación DOM<br/>- Manejo de eventos"]
-        
-        README_file["README.md<br/>- Documentación<br/>- Instrucciones<br/>- Dependencias"]
-        
+                
         Docker_file["Dockerfile<br/>- nginx imagen<br/>- Copia archivos<br/>- Exposición puerto 80"]
         
         Ignore["dockerignore<br/>- .git<br/>- node_modules<br/>- .env"]
@@ -265,23 +240,3 @@ graph
     
     style Web fill:#00D4FF,stroke:#0099CC,stroke-width:2px,color:#000
 ```
-
----
-
-## Conclusión
-
-La arquitectura actual es **sólida para una aplicación de tamaño pequeño a mediano** con una base de datos relacional clara y contenedorización moderna. 
-
-**Fortalezas:**
-✅ Separación clara de responsabilidades
-✅ Escalabilidad horizontal del backend
-✅ Aislamiento con Docker
-✅ Orquestación profesional con Kubernetes
-
-**Próximos pasos:**
-1. Implementar autenticación
-2. Agregar observabilidad (Prometheus + Grafana)
-3. Configurar backups automáticos
-4. Implementar CI/CD con GitOps
-
-Esta base permitirá escalar de manera segura y profesional.
