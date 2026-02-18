@@ -27,8 +27,8 @@ async function init() {
 }
 
 init().catch(err => {
-  console.error('Failed to initialize database', err);
-  // don't exit process immediately to allow app to start and surface errors in requests
+  console.error('Error al inicializar la base de datos', err);
+  // no salir inmediatamente del proceso para permitir que la app inicie y mostrar errores en las peticiones
 });
 
 module.exports = {

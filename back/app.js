@@ -37,14 +37,14 @@ app.use(function(err, req, res, next) {
   const status = err.status || 500;
   const wantsJson = req.xhr || (req.get('Accept')?.includes('application/json')) || req.originalUrl.startsWith('/todos');
   if (wantsJson) {
-    return res.status(status).json({ error: err.message || 'Internal Server Error' });
+    return res.status(status).json({ error: err.message ? `Error: ${err.message}` : 'Error interno del servidor' });
   }
 
-  // set locals, only providing error in development for HTML responses
-  res.locals.message = err.message;
+  // Mensajes en español para respuestas HTML
+  res.locals.message = err.message ? `Error: ${err.message}` : 'Error interno del servidor';
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
+  // renderizar la página de error
   res.status(status);
   res.render('error');
 });

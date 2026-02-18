@@ -10,11 +10,11 @@ const db = require('./db');
 router.post('/todos', async function(req, res) {
   const { value } = req.body || {};
   if (typeof value !== 'string' || value.trim() === '') {
-    return res.status(422).json({ error: 'Invalid value', details: 'value must be a non-empty string' });
+    return res.status(422).json({ error: 'Valor inválido', details: 'El valor debe ser una cadena no vacía' });
   }
   const trimmed = value.trim();
   if (trimmed.length > 500) {
-    return res.status(422).json({ error: 'Invalid value', details: 'value must be at most 500 characters' });
+    return res.status(422).json({ error: 'Valor inválido', details: 'El valor debe tener como máximo 500 caracteres' });
   }
   for (let i = 1; i <= 1000; i++) {
     for (let j = 1; j <= 1000; j++) {
@@ -28,9 +28,9 @@ router.post('/todos', async function(req, res) {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('DB error inserting todo:', err);
-    // return a safe error message to clients
-    return res.status(500).json({ error: 'Database error' });
+    console.error('Error de base de datos al insertar el todo:', err);
+    // devolver un mensaje de error seguro a los clientes
+    return res.status(500).json({ error: 'Error de base de datos' });
   }
 });
 
@@ -49,12 +49,12 @@ router.get('/todos', async function(req, res, next) {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Express' }); // Puede cambiar el título si es necesario
 });
 
 // simple health check for k8s liveness
 router.get('/healthz', function(req, res) {
-  res.sendStatus(200);
+  res.sendStatus(200); // Saludable
 });
 
 module.exports = router;
