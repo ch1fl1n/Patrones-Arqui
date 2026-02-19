@@ -57,12 +57,13 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 20
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+  requests:
+    cpu: "100m"        # 5 usuarios concurrentes
+    memory: "128Mi"
+  limits:
+    cpu: "600m"        # pico estimado para 30 usuarios
+    memory: "768Mi"
+
 ---
 apiVersion: v1
 kind: Service
