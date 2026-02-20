@@ -1,4 +1,5 @@
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = '';            
+fetch(`/todos`);
 
 const input = document.getElementById("itemInput");
 const button = document.getElementById("addButton");

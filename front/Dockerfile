@@ -4,6 +4,8 @@ FROM nginx:alpine
 # Remove default nginx content
 RUN rm -rf /usr/share/nginx/html/*
 
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Copy static site into nginx html folder
 COPY . /usr/share/nginx/html
 

@@ -14,8 +14,7 @@ metadata:
   name: backend-secret
 type: Opaque
 data:
-  # Replace the base64 value with your encoded password: echo -n 'your_password' | base64
-  PGPASSWORD: "REPLACE_WITH_BASE64"
+  PGPASSWORD: "SXZhbm5hPDM="
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -35,7 +34,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: your-registry/patrones-backend:latest
+        image: pat/backend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
@@ -46,7 +45,7 @@ spec:
             name: backend-secret
         readinessProbe:
           httpGet:
-            path: /todos
+            path: /healthz
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -57,12 +56,12 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 20
         resources:
-  requests:
-    cpu: "100m"        # 5 usuarios concurrentes
-    memory: "128Mi"
-  limits:
-    cpu: "600m"        # pico estimado para 30 usuarios
-    memory: "768Mi"
+          requests:
+            cpu: "100m"        # 5 usuarios concurrentes
+            memory: "128Mi"
+          limits:
+            cpu: "600m"        # pico estimado para 30 usuarios
+            memory: "768Mi"
 
 ---
 apiVersion: v1

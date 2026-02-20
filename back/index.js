@@ -16,11 +16,7 @@ router.post('/todos', async function(req, res) {
   if (trimmed.length > 500) {
     return res.status(422).json({ error: 'Valor inválido', details: 'El valor debe tener como máximo 500 caracteres' });
   }
-  for (let i = 1; i <= 1000; i++) {
-    for (let j = 1; j <= 1000; j++) {
-      print(`${i},${j} `);
-    }
-  }
+  // removed accidental debug/benchmark loop that caused high CPU and runtime errors
   try {
     const result = await db.query(
       'INSERT INTO todos(value) VALUES($1) RETURNING id, value, created_at',

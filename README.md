@@ -1,242 +1,183 @@
-# Modelo C4 - Arquitectura de Aplicación Web Escalable
+# Modelo C4 - Arquitectura de Persistencia
 
-## Análisis General
+Aplicación de gestión de tareas (todos) desplegada en Kubernetes con PostgreSQL, StatefulSets y PersistentVolumes.
 
-La arquitectura representa una **aplicación web moderna escalable** compuesta por:
-- **Frontend**: Aplicación estática (HTML/CSS/JavaScript)
-- **Backend**: API REST (Node.js/Express)
-- **Base de Datos**: PostgreSQL
-- **Orquestación**: Kubernetes con auto-escalado (HPA)
-- **Containerización**: Docker para aislamiento y portabilidad
+## Estrategias de Persistencia
+
+- **Base de Datos**: PostgreSQL en StatefulSet con PVC (10Gi)
+- **Configuración**: ConfigMap (no-sensible) + K8s Secrets (credenciales)
+- **Pool de Conexiones**: `pg.Pool` con 20 conexiones máximas
+- **Assets**: Static frontend desde contenedor; posible mejora con S3
 
 ---
 
-## C1: Diagrama de Contexto del Sistema
+## Diagramas C4
 
-Este diagrama muestra la vista de nivel más alto, representando el sistema completo y sus interactores externos.
+### **NIVEL 1: System Context (Contexto del Sistema)**
 
 ```mermaid
 graph
     User["👤 Usuario Final"]
+    Frontend["🌐 Aplicación Web<br/>(Frontend)"]
+    Backend["⚙️ API REST<br/>(Backend)"]
+    Database["🗄️ PostgreSQL<br/>(Base de Datos)"]
+    K8s["☸️ Kubernetes<br/>(Orquestador)"]
     
-    subgraph System["🔷 Sistema de Aplicación Web"]
-        WebApp["Aplicación Web<br/>(Frontend + Backend)"]
-    end
+    User -->|Interactúa| Frontend
+    Frontend -->|Solicita datos| Backend
+    Backend -->|Lee/Escribe| Database
+    K8s -->|Orquesta| Backend
+    K8s -->|Orquesta| Database
     
-    Admin["👨‍💼 Administrador<br/>del Sistema"]
-    
-    User -->|Accede a través de navegador| WebApp
-    WebApp -->|Solicita datos| ExternalAPI
-    Admin -->|Gestiona y monitorea| WebApp
-    
-    style System fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
-    style User fill:#50C878,stroke:#2D7A3F,stroke-width:2px,color:#fff
-    style Admin fill:#FF6B6B,stroke:#CC5555,stroke-width:2px,color:#fff
-    style ExternalAPI fill:#FFA500,stroke:#CC8400,stroke-width:2px,color:#fff
-```
-
-**Descripción:**
-- **Usuarios Finales**: Acceden a la aplicación web a través de navegadores HTTP/HTTPS
-- **Administradores**: Gestionan la infraestructura, despliegues y monitoreo
-
----
-
-## C2: Diagrama de Contenedores
-
-Este nivel muestra los contenedores principales, sus responsabilidades y cómo se comunican.
-
-```mermaid
-graph
-    Browser["🌐 Navegador Web<br/>(Cliente HTTP)"]
-    
-    subgraph Kubernetes["☸️ Cluster Kubernetes"]
-        subgraph Frontend["📱 Contenedor Frontend"]
-            FE["Cliente HTML/CSS/JS<br/>- index.html<br/>- script.js<br/>- styles.css"]
-        end
-        
-        subgraph Backend["🔧 Contenedor Backend"]
-            API["API REST Node.js<br/>- app.js<br/>- index.js<br/>- Rutas HTTP"]
-        end
-        
-        subgraph Database["💾 Base de Datos"]
-            DB["PostgreSQL<br/>(Stateful)"]
-            PV["Volumen Persistente<br/>(PV/PVC)"]
-        end
-        
-        subgraph Config["⚙️ Configuración"]
-            ConfigMap["ConfigMap &amp;<br/>Secrets"]
-        end
-    end
-    
-    HPA["📊 Auto-escalado HPA<br/>(Horizontal Pod<br/>Autoscaler)"]
-    
-    Browser -->|HTTP/HTTPS| FE
-    FE -->|API REST| API
-    API -->|SQL| DB
-    DB -->|Persiste datos| PV
-    ConfigMap -->|Inyecta config| API
-    HPA -.->|Monitorea &amp; escala| API
-    
-    style Kubernetes fill:#326CE5,stroke:#1E4B8C,stroke-width:3px,color:#fff
-    style Frontend fill:#00D4FF,stroke:#0099CC,stroke-width:2px,color:#000
-    style Backend fill:#FF6B9D,stroke:#CC3D6F,stroke-width:2px,color:#fff
-    style Database fill:#FFA500,stroke:#CC8400,stroke-width:2px,color:#fff
-    style Config fill:#9B59B6,stroke:#6C3A7E,stroke-width:2px,color:#fff
-    style HPA fill:#F39C12,stroke:#C87F0A,stroke-width:2px,color:#fff
-```
-
-**Componentes Principales:**
-
-| Contenedor | Responsabilidad | Tecnología |
-|-----------|-----------------|-----------|
-| **Frontend** | Interfaz de usuario estática | HTML5, CSS3, JavaScript |
-| **Backend** | Lógica de negocio, API REST | Node.js, Express |
-| **Database** | Persistencia de datos | PostgreSQL |
-| **ConfigMap/Secrets** | Configuración y variables sensibles | Kubernetes |
-| **HPA** | Auto-escalado automático | Kubernetes |
-
----
-
-## C3: Diagrama de Componentes
-
-### Backend - Componentes Internos
-
-```mermaid
-graph
-    Request["HTTP Request<br/>(Cliente)"]
-    
-    subgraph BackendApp["🔧 Aplicación Backend"]
-        Router["Router Express<br/>- GET /api/...<br/>- POST /api/...<br/>- PUT /api/...<br/>- DELETE /api/..."]
-        
-        subgraph Logic["Lógica de Negocio"]
-            Controller["Controllers<br/>- Validación<br/>- Procesamiento<br/>- Respuesta"]
-            Service["Servicios<br/>- Reglas de negocio<br/>- Transformación datos"]
-        end
-        
-        subgraph Data["Acceso a Datos"]
-            Repository["Repository/DAO<br/>- Consultas SQL<br/>- CRUD"]
-            DBConnect["Conexión DB<br/>- Pool de conexiones<br/>- Transacciones"]
-        end
-        
-        Error["Manejo de Errores<br/>- Validación<br/>- Logging<br/>- Respuestas HTTP"]
-    end
-    
-    Database["🗄️ PostgreSQL"]
-    Config["⚙️ Configuración<br/>(.env)"]
-    
-    Request --> Router
-    Router --> Controller
-    Controller --> Service
-    Service --> Repository
-    Repository --> DBConnect
-    DBConnect --> Database
-    
-    Controller --> Error
-    Service --> Error
-    Repository --> Error
-    
-    Config -.->|Inicializa| DBConnect
-    
-    style BackendApp fill:#FF6B9D,stroke:#CC3D6F,stroke-width:2px,color:#fff
-    style Logic fill:#FF8FB3,stroke:#CC7090,stroke-width:2px,color:#000
-    style Data fill:#FF9FBE,stroke:#CC7FA0,stroke-width:2px,color:#000
-    style Router fill:#E91E63,stroke:#B3154D,stroke-width:2px,color:#fff
-    style Error fill:#FFC1CC,stroke:#CC99A6,stroke-width:2px,color:#000
-```
-
-### Frontend - Componentes Internos
-
-```mermaid
-graph
-    subgraph FrontendApp["📱 Aplicación Frontend"]
-        HTML["index.html<br/>- Estructura DOM<br/>- Elementos HTML<br/>- Referencias a CSS/JS"]
-        
-        CSS["styles.css<br/>- Estilos globales<br/>- Responsivos<br/>- Temas"]
-        
-        subgraph JS["script.js"]
-            Events["Event Listeners<br/>- Click<br/>- Submit<br/>- Change"]
-            
-            API_Client["API Client<br/>- fetch() calls<br/>- Headers<br/>- Error handling"]
-            
-            DOM_Manip["DOM Manipulation<br/>- querySelector<br/>- innerHTML<br/>- classList"]
-            
-            State["Estado Local<br/>- Variables<br/>- LocalStorage<br/>- Session"]
-        end
-    end
-    
-    Backend["🔧 API Backend"]
-    
-    HTML --> CSS
-    HTML --> JS
-    Events --> DOM_Manip
-    Events --> API_Client
-    API_Client --> Backend
-    Backend -->|JSON| API_Client
-    API_Client --> State
-    State --> DOM_Manip
-    DOM_Manip --> HTML
-    
-    style FrontendApp fill:#00D4FF,stroke:#0099CC,stroke-width:2px,color:#000
-    style JS fill:#00E5FF,stroke:#00B8D4,stroke-width:2px,color:#000
-    style HTML fill:#4FC3F7,stroke:#3FA9D9,stroke-width:2px,color:#fff
-    style CSS fill:#81D4FA,stroke:#66AACF,stroke-width:2px,color:#000
+    style User fill:#e1f5ff
+    style Frontend fill:#fff3e0
+    style Backend fill:#f3e5f5
+    style Database fill:#e8f5e9
+    style K8s fill:#fce4ec
 ```
 
 ---
 
-## C4: Diagrama de Código
-
-### Backend - Estructura de Archivos y Clases
+### **NIVEL 2: Container (Contenedores)**
 
 ```mermaid
 graph
-    subgraph App["📂 Proyecto Backend"]
-        Index["index.js<br/>- Punto de entrada<br/>- Inicialización"]
+    Client["👤 Cliente HTTP"]
+    
+    subgraph K8s["Kubernetes Cluster"]
+        subgraph FrontendPod["Pod: nginx-frontend"]
+            Frontend["🌐 Frontend Container<br/>- HTML/CSS/JS<br/>- Port: 80"]
+        end
         
-        App_js["app.js<br/>- Configuración Express<br/>- Middlewares<br/>- Rutas"]
+        subgraph BackendPod["Pod: app-backend"]
+            Backend["⚙️ Backend Container<br/>- Express.js<br/>- Node.js Runtime<br/>- Port: 3000"]
+        end
         
-        DB_js["db.js<br/>- Configuración PostgreSQL<br/>- Pool de conexiones<br/>- Query builder"]
+        subgraph DBStatefulSet["StatefulSet: postgres"]
+            DB["🗄️ PostgreSQL Container<br/>- postgres:15-alpine<br/>- Port: 5432"]
+            PVC["💾 PersistentVolumeClaim<br/>- Almacenamiento: 10Gi<br/>- Access Mode: ReadWriteOnce"]
+        end
         
-        WWW["bin/www<br/>- Start server<br/>- Port config"]
+        CM["⚙️ ConfigMap<br/>PGHOST=postgres<br/>PGPORT=5432<br/>PGDATABASE=todos"]
         
-        Package["package.json<br/>- Dependencies<br/>- Scripts"]
+        Secret["🔐 Kubernetes Secret<br/>POSTGRES_PASSWORD<br/>PGUSER=postgres"]
     end
     
-    Index --> App_js
-    App_js --> Routes
-    Routes --> Controllers
-    Controllers --> Services
-    Services --> Models
-    Models --> DB_js
-    Index --> WWW
-    Package -.->|Define| App
+    Client -->|HTTP/HTTPS| Frontend
+    Frontend -->|API Calls| Backend
+    Backend -->|pg.Pool| DB
+    Backend -.->|Inyección| CM
+    Backend -.->|Inyección| Secret
+    DB --> PVC
     
-    style App fill:#FF6B9D,stroke:#CC3D6F,stroke-width:2px,color:#fff
-    style Routes fill:#FF8FB3,stroke:#CC7090,stroke-width:2px,color:#000
-    style Controllers fill:#FF9FBE,stroke:#CC7FA0,stroke-width:2px,color:#000
-    style Services fill:#FFB3C9,stroke:#CCA0A0,stroke-width:2px,color:#000
-    style Models fill:#FFC1CC,stroke:#CC99A6,stroke-width:2px,color:#000
+    style Client fill:#e1f5ff
+    style Frontend fill:#fff3e0
+    style Backend fill:#f3e5f5
+    style DB fill:#e8f5e9
+    style PVC fill:#c8e6c9
+    style CM fill:#fff9c4
+    style Secret fill:#f8bbd0
 ```
 
-### Frontend - Estructura de Archivos
+---
+
+### **NIVEL 3: Component (Componentes del Backend)**
 
 ```mermaid
 graph
-    subgraph Web["📂 Proyecto Frontend"]
-        HTML_file["index.html<br/>- Estructura del sitio<br/>- Elementos interactivos<br/>- Referencias externas"]
+    Client["👤 HTTP Request"]
+    
+    subgraph Express["Express Application"]
+        Router["📍 Router<br/>- GET /todos<br/>- POST /todos<br/>- DELETE /todos/:id"]
         
-        CSS_file["styles.css<br/>- Reset CSS<br/>- Componentes<br/>- Responsivos<br/>- Animaciones"]
+        Middleware["🔌 Middleware<br/>- CORS<br/>- Body Parser<br/>- Morgan Logger"]
         
-        JS_file["script.js<br/>- Funciones de negocio<br/>- Llamadas API<br/>- Manipulación DOM<br/>- Manejo de eventos"]
-                
-        Docker_file["Dockerfile<br/>- nginx imagen<br/>- Copia archivos<br/>- Exposición puerto 80"]
-        
-        Ignore["dockerignore<br/>- .git<br/>- node_modules<br/>- .env"]
+        ErrorHandler["⚠️ Global Error Handler<br/>- 404 Handler<br/>- Exception Catcher"]
     end
     
-    HTML_file --> CSS_file
-    HTML_file --> JS_file
-    Docker_file --> HTML_file
+    subgraph Database["Database Layer"]
+        Pool["🔄 Connection Pool<br/>- pg.Pool<br/>- Max connections: 20<br/>- Idle timeout: 30s"]
+        
+        Init["🚀 Database Initializer<br/>- CREATE TABLE IF EXISTS<br/>- Setup schema"]
+        
+        Query["📝 Query Executor<br/>- Prepared Statements<br/>- Parameterized queries"]
+    end
     
-    style Web fill:#00D4FF,stroke:#0099CC,stroke-width:2px,color:#000
+    subgraph Persistence["Storage"]
+        PostgreSQL["🗄️ PostgreSQL DB<br/>Table: todos<br/>- id: SERIAL PK<br/>- value: TEXT<br/>- created_at: TIMESTAMPTZ"]
+    end
+    
+    Client --> Middleware
+    Middleware --> Router
+    Router --> Query
+    Query --> Pool
+    Pool --> Init
+    Init --> PostgreSQL
+    
+    style Router fill:#f3e5f5
+    style Middleware fill:#e0f2f1
+    style ErrorHandler fill:#ffebee
+    style Pool fill:#fff9c4
+    style Init fill:#fff3e0
+    style PostgreSQL fill:#e8f5e9
 ```
+
+---
+
+### **NIVEL 4: Código - Estrategia de Persistencia y Configuración de Conexión (db.js)**
+
+```javascript
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  host: process.env.PGHOST || 'localhost',
+  port: parseInt(process.env.PGPORT || '5432'),
+  database: process.env.PGDATABASE || 'todos',
+  user: process.env.PGUSER || 'postgres',
+  password: process.env.PGPASSWORD || '',
+  max: 20,
+  idleTimeoutMillis: 30000
+});
+
+async function init() {
+  const client = await pool.connect();
+  try {
+    await client.query(`CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      value TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { query: (text, params) => pool.query(text, params), pool, init };
+```
+
+---
+
+## Alternativas Consideradas
+
+### 1. **Base de Datos**
+| Opción | Pros | Contras |
+|--------|------|---------|
+| **PostgreSQL (Actual)** | ACID, JSON, Escalable | Requiere StatefulSet, más recursos |
+| **MongoDB** | Schema flexible, fácil de escalar | No ACID, más memoria |
+| **SQLite** | Simple, sin dependencias | No es distribuida, no escalable |
+
+### 2. **Almacenamiento**
+| Opción | Ventajas | Desventajas |
+|--------|----------|-------------|
+| **PVC Local** | Rápido, simple | Acoplado a nodo, no replicado |
+| **NFS** | Compartido entre nodos | Latencia de red, SPOF |
+| **Cloud Storage** | Escalable, replicado | Latencia mayor, costo |
+| **Ceph/Rook** | Distribuido, resiliente | Complejidad operacional |
+
+### 3. **ORM/Query Builder**
+| Opción | Pros | Contras |
+|--------|------|---------|
+| **SQL Directo (Actual)** | Rendimiento máximo, control | Vulnerable a SQL injection si no es cuidadoso |
+| **Prisma** | Type-safe, generador de tipos | Overhead de abstracción |
+| **TypeORM** | Decoradores, relaciones | Complejidad adicional |
+| **Sequelize** | Validaciones, hooks | Menos performante |
