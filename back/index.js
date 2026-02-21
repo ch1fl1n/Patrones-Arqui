@@ -1,6 +1,7 @@
 let express = require('express');
 let router = express.Router();
 const db = require('./db');
+const { Worker } = require('node:worker_threads');
 
 /**
  * POST /todos
@@ -16,8 +17,17 @@ router.post('/todos', async function(req, res) {
   if (trimmed.length > 500) {
     return res.status(422).json({ error: 'Valor inválido', details: 'El valor debe tener como máximo 500 caracteres' });
   }
-  // removed accidental debug/benchmark loop that caused high CPU and runtime errors
+  const cpuTask = () => {
+    let cpuSum = 0;
+    for (let i = 1; i <= 1000; i++) {
+      for (let j = 1; j <= 1000; j++) {
+        cpuSum += i + j;
+      }
+    }
+    return cpuSum;
+  };
   try {
+    await runCpuHeavyTask(cpuTask);
     const result = await db.query(
       'INSERT INTO todos(value) VALUES($1) RETURNING id, value, created_at',
       [trimmed]
@@ -54,3 +64,22 @@ router.get('/healthz', function(req, res) {
 });
 
 module.exports = router;
+
+function runCpuHeavyTask(taskFn) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(
+      `const { parentPort, workerData } = require('node:worker_threads');
+const task = new Function('return (' + workerData + ')')();
+parentPort.postMessage(task());`,
+      { eval: true, workerData: taskFn.toString() }
+    );
+
+    worker.once('message', resolve);
+    worker.once('error', reject);
+    worker.once('exit', code => {
+      if (code !== 0) {
+        reject(new Error(`CPU worker stopped with exit code ${code}`));
+      }
+    });
+  });
+}

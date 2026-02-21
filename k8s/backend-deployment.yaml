@@ -57,11 +57,11 @@ spec:
           periodSeconds: 20
         resources:
           requests:
-            cpu: "100m"        # 5 usuarios concurrentes
-            memory: "128Mi"
+            cpu: "250m"        # estimado para 5 usuarios concurrentes
+            memory: "256Mi"
           limits:
-            cpu: "600m"        # pico estimado para 30 usuarios
-            memory: "768Mi"
+            cpu: "1500m"       # pico estimado para 30 usuarios concurrentes
+            memory: "1536Mi"
 
 ---
 apiVersion: v1

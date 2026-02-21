@@ -11,14 +11,19 @@
   <div class="container">
     <h1>Lista dinámica</h1>
 
-    <label for="itemInput">Ingresa un valor:</label>
-    <input type="text" id="itemInput" placeholder="Ej: Perro, Ingeniero..." />
+    <form id="itemForm" class="input-row">
+      <label for="itemInput">Ingresa un valor:</label>
+      <div class="input-controls">
+        <input type="text" id="itemInput" placeholder="Ej: Perro, Ingeniero..." />
+        <button type="submit" id="addButton">Agregar</button>
+      </div>
+    </form>
 
-    <button id="addButton">Agregar</button>
+    <output id="statusText" aria-live="polite" class="status-text"></output>
 
-    <ul id="itemList"></ul>
+    <ul id="itemList" aria-live="polite"></ul>
   </div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
