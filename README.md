@@ -6,7 +6,7 @@ Aplicación de gestión de tareas (todos) desplegada en Kubernetes con PostgreSQ
 
 - **Base de Datos**: PostgreSQL en StatefulSet con PVC (10Gi)
 - **Configuración**: ConfigMap (no-sensible) + K8s Secrets (credenciales)
-- **Pool de Conexiones**: `pg.Pool` con 20 conexiones máximas
+- **Pool de Conexiones**: `pg.Pool` con 30-40 conexiones máximas
 - **Assets**: Static frontend desde contenedor; posible mejora con S3
 
 ---
@@ -16,6 +16,11 @@ Aplicación de gestión de tareas (todos) desplegada en Kubernetes con PostgreSQ
 ### **NIVEL 1: System Context (Contexto del Sistema)**
 
 ```mermaid
+---
+config:
+  look: neo
+  theme: neo
+---
 graph
     User["👤 Usuario Final"]
     Frontend["🌐 Aplicación Web<br/>(Frontend)"]
@@ -41,6 +46,11 @@ graph
 ### **NIVEL 2: Container (Contenedores)**
 
 ```mermaid
+---
+config:
+  look: neo
+  theme: neo
+---
 graph
     Client["👤 Cliente HTTP"]
     
@@ -84,6 +94,11 @@ graph
 ### **NIVEL 3: Component (Componentes del Backend)**
 
 ```mermaid
+---
+config:
+  look: neo
+  theme: neo
+---
 graph
     Client["👤 HTTP Request"]
     
@@ -96,7 +111,7 @@ graph
     end
     
     subgraph Database["Database Layer"]
-        Pool["🔄 Connection Pool<br/>- pg.Pool<br/>- Max connections: 20<br/>- Idle timeout: 30s"]
+        Pool["🔄 Connection Pool<br/>- pg.Pool<br/>- Max connections: 30-40<br/>- Idle timeout: 30s"]
         
         Init["🚀 Database Initializer<br/>- CREATE TABLE IF EXISTS<br/>- Setup schema"]
         
@@ -135,7 +150,6 @@ const pool = new Pool({
   database: process.env.PGDATABASE || 'todos',
   user: process.env.PGUSER || 'postgres',
   password: process.env.PGPASSWORD || '',
-  max: 20,
   idleTimeoutMillis: 30000
 });
 
